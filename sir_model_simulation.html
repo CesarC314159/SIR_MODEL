@@ -1,0 +1,106 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SIR Model - Canvas Simulation</title>
+  <style>
+    canvas { border: 1px solid black; }
+    label { display: block; margin-top: 10px; }
+    .tooltip {
+      position: absolute;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 5px;
+      display: none;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>SIR Model Simulation (Canvas)</h1>
+  <label>Transmission Rate (β): <input type="range" id="beta" min="0.01" max="1" step="0.01" value="0.3" oninput="simulate()"><span id="betaVal">0.3</span></label>
+  <label>Recovery Rate (γ): <input type="range" id="gamma" min="0.01" max="1" step="0.01" value="0.1" oninput="simulate()"><span id="gammaVal">0.1</span></label>
+  <label>Initial Infected (I₀): <input type="range" id="i0" min="1" max="100" step="1" value="1" oninput="simulate()"><span id="i0Val">1</span></label>
+  <canvas id="canvas" width="1200" height="500"></canvas>
+  <div class="tooltip" id="tooltip"></div>
+
+  <script>
+    function simulate() {
+      const beta = parseFloat(document.getElementById('beta').value);
+      const gamma = parseFloat(document.getElementById('gamma').value);
+      const I0 = parseInt(document.getElementById('i0').value);
+      document.getElementById('betaVal').textContent = beta;
+      document.getElementById('gammaVal').textContent = gamma;
+      document.getElementById('i0Val').textContent = I0;
+
+      const N = 1000;
+      let S = N - I0;
+      let I = I0;
+      let R = 0;
+      const days = 160;
+      const Sdata = [], Idata = [], Rdata = [];
+
+      for (let t = 0; t <= days; t++) {
+        Sdata.push(S);
+        Idata.push(I);
+        Rdata.push(R);
+
+        const newInfected = beta * S * I / N;
+        const newRecovered = gamma * I;
+
+        S -= newInfected;
+        I += newInfected - newRecovered;
+        R += newRecovered;
+      }
+
+      drawGraph(Sdata, Idata, Rdata);
+    }
+
+    function drawGraph(S, I, R) {
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const maxY = 1000;
+      const scaleX = canvas.width / S.length;
+      const scaleY = canvas.height / maxY;
+
+      function drawLine(data, color) {
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.moveTo(0, canvas.height - data[0] * scaleY);
+        for (let x = 1; x < data.length; x++) {
+          ctx.lineTo(x * scaleX, canvas.height - data[x] * scaleY);
+        }
+        ctx.stroke();
+      }
+
+      drawLine(S, 'blue');     // Susceptible
+      drawLine(I, 'red');      // Infected
+      drawLine(R, 'green');    // Recovered
+
+      canvas.onmousemove = function(event) {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+        const day = Math.floor(mouseX / scaleX);
+        if (day >= 0 && day < S.length) {
+          const tooltip = document.getElementById('tooltip');
+          tooltip.style.left = event.clientX + 'px';
+          tooltip.style.top = event.clientY + 'px';
+          tooltip.innerHTML = `Day: ${day}<br>S: ${Math.round(S[day])}<br>I: ${Math.round(I[day])}<br>R: ${Math.round(R[day])}`;
+          tooltip.style.display = 'block';
+        }
+      };
+
+      canvas.onmouseout = function() {
+        const tooltip = document.getElementById('tooltip');
+        tooltip.style.display = 'none';
+      };
+    }
+
+    window.onload = simulate;
+  </script>
+</body>
+</html>
