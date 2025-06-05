@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>2D Reaction-Diffusion SIR Model Simulation</title>
+    <style>
+        canvas { border: 1px solid black; }
+        .controls { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>2-Dimensional Reaction-Diffusion SIR Model Simulation</h1>
+    <canvas id="simulationCanvas" width="500" height="500"></canvas>
+    <div class="controls">
+        <label for="beta">Infection Rate (β):</label>
+        <input type="range" id="beta" min="0.01" max="1" step="0.01" value="0.3">
+        <span id="betaValue">0.3</span><br>
+        
+        <label for="gamma">Recovery Rate (γ):</label>
+        <input type="range" id="gamma" min="0.01" max="1" step="0.01" value="0.1">
+        <span id="gammaValue">0.1</span><br>
+        
+        <label for="DS">Diffusion Coefficient for Susceptible (DS):</label>
+        <input type="range" id="DS" min="0.01" max="1" step="0.01" value="0.1">
+        <span id="DSValue">0.1</span><br>
+        
+        <label for="DI">Diffusion Coefficient for Infected (DI):</label>
+        <input type="range" id="DI" min="0.01" max="1" step="0.01" value="0.1">
+        <span id="DIValue">0.1</span><br>
+        
+        <label for="DR">Diffusion Coefficient for Recovered (DR):</label>
+        <input type="range" id="DR" min="0.01" max="1" step="0.01" value="0.1">
+        <span id="DRValue">0.1</span><br>
+        
+        <label for="initialInfection">Initial Infection Size:</label>
+        <input type="range" id="initialInfection" min="1" max="100" step="1" value="10">
+        <span id="initialInfectionValue">10</span><br>
+        
+        <button id="pausePlayButton">Pause</button>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('simulationCanvas');
+        const ctx = canvas.getContext('2d');
+        const gridSize = 500;
+        const dx = 1;
+        const dt = 0.1;
+        let beta = parseFloat(document.getElementById('beta').value);
+        let gamma = parseFloat(document.getElementById('gamma').value);
+        let DS = parseFloat(document.getElementById('DS').value);
+        let DI = parseFloat(document.getElementById('DI').value);
+        let DR = parseFloat(document.getElementById('DR').value);
+        let initialInfection = parseInt(document.getElementById('initialInfection').value);
+        let paused = false;
+        
+        let S = Array(gridSize).fill().map(() => Array(gridSize).fill(1000));
+        let I = Array(gridSize).fill().map(() => Array(gridSize).fill(0));
+        let R = Array(gridSize).fill().map(() => Array(gridSize).fill(0));
+        let S_new = Array(gridSize).fill().map(() => Array(gridSize).fill(0));
+        let I_new = Array(gridSize).fill().map(() => Array(gridSize).fill(0));
+        let R_new = Array(gridSize).fill().map(() => Array(gridSize).fill(0));
+        
+        I[Math.floor(gridSize / 2)][Math.floor(gridSize / 2)] = initialInfection;
+        
+        function updateGrid() {
+            for (let i = 1; i < gridSize - 1; i++) {
+                for (let j = 1; j < gridSize - 1; j++) {
+                    let lapS = (S[i+1][j] + S[i-1][j] + S[i][j+1] + S[i][j-1] - 4 * S[i][j]) / (dx * dx);
+                    let lapI = (I[i+1][j] + I[i-1][j] + I[i][j+1] + I[i][j-1] - 4 * I[i][j]) / (dx * dx);
+                    let lapR = (R[i+1][j] + R[i-1][j] + R[i][j+1] + R[i][j-1] - 4 * R[i][j]) / (dx * dx);
+                    
+                    S_new[i][j] = S[i][j] + dt * (DS * lapS - beta * S[i][j] * I[i][j] / 1000);
+                    I_new[i][j] = I[i][j] + dt * (DI * lapI + beta * S[i][j] * I[i][j] / 1000 - gamma * I[i][j]);
+                    R_new[i][j] = R[i][j] + dt * (DR * lapR + gamma * I[i][j]);
+                }
+            }
+            
+            [S, S_new] = [S_new, S];
+            [I, I_new] = [I_new, I];
+            [R, R_new] = [R_new, R];
+        }
+        
+        function renderGrid() {
+            let imageData = ctx.createImageData(canvas.width, canvas.height);
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    let index = (i + j * gridSize) * 4;
+                    let s = S[i][j], iVal = I[i][j], r = R[i][j];
+                    let total = s + iVal + r;
+                    let red = (iVal / total) * 255;
+                    let green = (s / total) * 255;
+                    let blue = (r / total) * 255;
+                    
+                    imageData.data[index + 0] = red;
+                    imageData.data[index + 1] = green;
+                    imageData.data[index + 2] = blue;
+                    imageData.data[index + 3] = 255; // Alpha channel
+                    
+                    // Avoid black unless all values are zero
+                    if (red === 0 && green === 0 && blue === 0) {
+                        imageData.data[index + 3] = 0; // Transparent
+                    }
+                }
+            }
+            ctx.putImageData(imageData, 0, 0);
+        }
+        
+        function simulationStep() {
+            if (!paused) {
+                updateGrid();
+                renderGrid();
+            }
+            requestAnimationFrame(simulationStep);
+        }
+        
+        document.getElementById('beta').addEventListener('input', function() {
+            beta = parseFloat(this.value);
+            document.getElementById('betaValue').textContent = this.value;
+        });
+        
+        document.getElementById('gamma').addEventListener('input', function() {
+            gamma = parseFloat(this.value);
+            document.getElementById('gammaValue').textContent = this.value;
+        });
+        
+        document.getElementById('DS').addEventListener('input', function() {
+            DS = parseFloat(this.value);
+            document.getElementById('DSValue').textContent = this.value;
+        });
+        
+        document.getElementById('DI').addEventListener('input', function() {
+            DI = parseFloat(this.value);
+            document.getElementById('DIValue').textContent = this.value;
+        });
+        
+        document.getElementById('DR').addEventListener('input', function() {
+            DR = parseFloat(this.value);
+            document.getElementById('DRValue').textContent = this.value;
+        });
+        
+        document.getElementById('initialInfection').addEventListener('input', function() {
+            initialInfection = parseInt(this.value);
+            document.getElementById('initialInfectionValue').textContent = this.value;
+            I[Math.floor(gridSize / 2)][Math.floor(gridSize / 2)] = initialInfection;
+        });
+        
+        document.getElementById('pausePlayButton').addEventListener('click', function() {
+            paused = !paused;
+            this.textContent = paused ? 'Play' : 'Pause';
+        });
+        
+        simulationStep();
+    </script>
+</body>
+</html>
