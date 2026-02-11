@@ -3,13 +3,13 @@
 
 This repository contains a simulation and analysis of the **SIR (Susceptible-Infected-Recovered)** epidemiological model. The SIR model is a classic mathematical model used to understand the spread of infectious diseases in a population.
 
-## 📁 Contents
+## Contents
 
 - `sir_model.html` — An interactive HTML file visualizing the SIR model dynamics.
 - `sir_model.py` — Python script used to generate the simulation.
 - `README.md` — Project overview and usage instructions.
 
-## 📊 About the SIR Model
+## About the SIR Model
 
 The SIR model divides the population into three compartments:
 - **S (Susceptible):** Individuals who can contract the disease.
@@ -31,7 +31,7 @@ Where:
 - \( \gamma \) is the recovery rate
 - \( N \) is the total population
 
-## 🚀 How to Use
+## How to Use
 
 1. Clone the repository:
    ```bash
