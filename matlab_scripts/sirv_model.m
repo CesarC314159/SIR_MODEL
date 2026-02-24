@@ -1,5 +1,5 @@
 %{
-This script solves outputs a graph of the SIRV model using Euler's method.
+This script outputs a graph of the SIRV model using Euler's method.
 
 The system of DEs is:
 dS/dt=-B*I*S/N
