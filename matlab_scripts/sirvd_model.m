@@ -1,5 +1,5 @@
 %{
-This script solve the SIRD model using Euler's method.
+This script solves the SIRD model using Euler's method.
 
 The system of DEs is:
 dS/dt=-B*I*S/N
